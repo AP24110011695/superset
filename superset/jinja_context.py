@@ -786,7 +786,7 @@ class ExtraCache:
         time_range = time_range or NO_TIME_RANGE
         if time_range == NO_TIME_RANGE and default:
             time_range = default
-        from_expr, to_expr = self._resolve_since_until(time_range, default)
+        from_expr, to_expr = self._resolve_since_until(time_range)
 
         def _format_dttm(dttm: datetime | None) -> str | None:
             if strftime and dttm:
@@ -805,15 +805,13 @@ class ExtraCache:
 
     @staticmethod
     def _resolve_since_until(
-        time_range: str | None, default: str | None
+        time_range: str,
     ) -> tuple[datetime | None, datetime | None]:
-        # A malformed time range must surface as a handled template error
-        # instead of a bare ValueError that escapes the render as a 500.
+        # A ValueError from the date parser (e.g. a deeply nested expression)
+        # must surface as a handled template error instead of escaping the
+        # render as a 500.
         try:
-            range_ = time_range or NO_TIME_RANGE
-            if range_ == NO_TIME_RANGE and default:
-                range_ = default
-            return get_since_until_from_time_range(range_)
+            return get_since_until_from_time_range(time_range)
         except ValueError as ex:
             raise SupersetTemplateException(str(ex)) from ex
 
